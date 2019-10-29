@@ -25,18 +25,23 @@ public class dns351 {
 
         String[] split_address = address.substring(1).split(":");
 
-        System.out.printf("");
-
         int port = 53;
 
         if(split_address.length == 2){
             port = Integer.parseInt(split_address[1]);
         }
+        
+        String name = args[1];
 
-        // TODO: Check validity of ip
+        String requestType = "a";
+
+        createRequest(address, port, name, requestType);
 
 
 
+    }
+
+    private static void createRequest(String address, int port, String name, String requestType) {
     }
 
 }
