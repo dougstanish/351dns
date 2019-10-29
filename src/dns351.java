@@ -1,3 +1,6 @@
+import java.util.BitSet;
+import java.util.Random;
+
 public class dns351 {
 
 
@@ -42,6 +45,19 @@ public class dns351 {
     }
 
     private static void createRequest(String address, int port, String name, String requestType) {
+        
+        createHeader();
+        
+    }
+
+    private static void createHeader() {
+
+        Random r = new Random();
+
+        // Create random message id
+        short messageID = (short) r.nextInt(Short.MAX_VALUE + 1);
+
+
     }
 
 }
