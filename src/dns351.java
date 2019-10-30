@@ -26,12 +26,12 @@ public class dns351 {
             System.exit(1);
         }
 
-        String[] split_address = address.substring(1).split(":");
+        String[] splitAddress = address.substring(1).split(":");
 
         int port = 53;
 
-        if(split_address.length == 2){
-            port = Integer.parseInt(split_address[1]);
+        if(splitAddress.length == 2){
+            port = Integer.parseInt(splitAddress[1]);
         }
         
         String name = args[1];
@@ -47,7 +47,61 @@ public class dns351 {
     private static void createRequest(String address, int port, String name, String requestType) {
         
         createHeader();
+
+        byte[] query = createQuery(name, requestType);
         
+    }
+
+    private static byte[] createQuery(String name, String requestType) {
+
+        String[] nameSplit = name.split("\\.");
+
+        // Creates byte array to hold characters plus length values
+        byte[] qname = new byte[(name.length() - nameSplit.length + 1) + nameSplit.length + 1];
+
+        int bytePos = 0;
+
+        // For each substring separated by '.'
+        for(String substring: nameSplit){
+
+            // Convert length of substring to byte and add to byte array
+            qname[bytePos] = (byte) substring.length();
+            bytePos++;
+
+            // For each character in substring
+            for(char character: substring.toLowerCase().toCharArray()){
+
+                // Add to byte array
+                qname[bytePos] = (byte) character;
+
+                bytePos++;
+
+            }
+        }
+
+        // Sets the final length of the substring to 00
+        qname[bytePos] = 0x00;
+
+        // Create array to hold type of query
+        byte[] qtype = new byte[2];
+
+        // If it is an A record lookup, sets appropriate values
+        if(requestType.equals("a")){
+            qtype[0] = 0x00;
+            qtype[1] = 0x01;
+        }
+
+        // Sets value for internet lookup
+        byte[] qclass = {0x00, 0x01};
+
+        // Combines parts into one array
+        byte[] completeQuery = new byte[qname.length + qtype.length + qclass.length];
+        System.arraycopy(qname, 0, completeQuery, 0, qname.length);
+        System.arraycopy(qtype, 0, completeQuery, qname.length, qtype.length);
+        System.arraycopy(qclass, 0, completeQuery, qname.length + qtype.length, qclass.length);
+
+        // Returns combined parts
+        return completeQuery;
     }
 
     private static void createHeader() {
