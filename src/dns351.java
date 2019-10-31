@@ -1,4 +1,6 @@
-import java.util.BitSet;
+import java.io.IOException;
+import java.net.*;
+import java.nio.ByteBuffer;
 import java.util.Random;
 
 public class dns351 {
@@ -33,23 +35,65 @@ public class dns351 {
         if(splitAddress.length == 2){
             port = Integer.parseInt(splitAddress[1]);
         }
+
+        byte[] serverIP = new byte[4];
+        String[] ipBytes = splitAddress[0].split("\\.");
+        if(ipBytes.length != 4) {
+            System.out.println("Server IP address must be in a.b.c.d format: " + splitAddress[0]);
+            System.exit(1);
+        }
+
+        for(int i = 0; i < 4; i++) {
+            serverIP[i] = (byte) Integer.parseInt(ipBytes[i]);
+        }
         
         String name = args[1];
 
         String requestType = "a";
 
-        createRequest(address, port, name, requestType);
+        byte[] request = createRequest(address, port, name, requestType);
+        byte[] responseData = new byte[512];
 
+        try {
+            DatagramSocket socket = new DatagramSocket();
+            DatagramPacket dnsReq = new DatagramPacket(request, request.length, InetAddress.getByAddress(serverIP), port);
+            DatagramPacket dnsResponse = new DatagramPacket(responseData, 512);
+            socket.send(dnsReq);
+            socket.receive(dnsResponse);
+        } catch(SocketException e) {
+            System.out.println("Could not bind to a datagram socket.");
+            System.exit(1);
+        } catch (UnknownHostException e) {
+            System.out.println(splitAddress[0] + " is not a valid IP address.");
+            System.exit(1);
+        } catch (IOException e) {
+            System.out.println("Could not send packet to server.");
+            System.exit(1);
+        }
 
+        if(responseData[0] != request[0] && responseData[1] != request[1]) {
+            System.out.println("MessageID of response does not match!!!");
+        }
 
     }
 
-    private static void createRequest(String address, int port, String name, String requestType) {
+    private static byte[] createRequest(String address, int port, String name, String requestType) {
         
-        createHeader();
+        byte[] header = createHeader();
 
         byte[] query = createQuery(name, requestType);
-        
+
+        // Final Packet.
+        byte[] request = new byte[header.length + query.length];
+
+        // Byte Buffers provide useful utilities.
+        ByteBuffer rqBuf = ByteBuffer.wrap(request);
+
+        // Combine header and query
+        rqBuf.put(header);
+        rqBuf.put(query);
+
+        return request;
     }
 
     private static byte[] createQuery(String name, String requestType) {
@@ -104,14 +148,33 @@ public class dns351 {
         return completeQuery;
     }
 
-    private static void createHeader() {
+    private static byte[] createHeader() {
 
         Random r = new Random();
+
+        byte[] output = new byte[12];
 
         // Create random message id
         short messageID = (short) r.nextInt(Short.MAX_VALUE + 1);
 
+        // Create a buffer we can construct the header in.
+        ByteBuffer buf = ByteBuffer.wrap(output);
 
+        // Place the message into the buffer.
+        buf.putShort(messageID);
+
+        // QR, OPCODE, AA, TC, RD, RA, and RCODE, are conveniently all 0
+        buf.putShort((short) 0);
+
+        // QDCOUNT, we're making one request.
+        buf.putShort((short) 1);
+
+        // Rest are 0
+        buf.putShort((short) 0);
+        buf.putShort((short) 0);
+        buf.putShort((short) 0);
+
+        return output;
     }
 
 }
