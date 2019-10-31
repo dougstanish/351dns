@@ -342,13 +342,66 @@ public class dns351 {
             int ttl = ((response[curByte++] << 24) | (response[curByte++] << 16) | (response[curByte++] << 8) | response[curByte++]);
             short rdlength = (short) ((response[curByte++] << 8) | response[curByte++]);
 
+            // If it is an A record
             if(type == 1) {
+
+                // If it is an invalid length
                 if(rdlength != 4) {
                     System.out.println("ERROR\tA records should only have a 4 byte RDATA");
                     System.exit(1);
                 }
+
+                // Output the IP record
                 System.out.println("IP\t" + (response[curByte++] & 0xff) + "." + (response[curByte++] & 0xff) + "." +
                         (response[curByte++] & 0xff) + "." + (response[curByte++] & 0xff) + "\tnonauth");
+            }
+            else if(type == 5){
+
+                // Creates string to hold combined record
+                String cnameRecord = "";
+
+                // Gets length of subsection of CNAME record
+                int curLength = (int) response[curByte];
+                int totalLength = 0;
+
+                // While there are still chars to be read
+                while(totalLength != rdlength){
+
+                    // If the current subsection has no more chars
+                    if(curLength == -1){
+
+                        // Sets length of next subsection
+                        curLength = (int) response[curByte];
+
+                        // If this subsection was the last
+                        if(curLength == 0){
+
+                            curByte++;
+
+                            // Breaks out of loop
+                            break;
+                        }
+
+                        // Adds period to divide subsections
+                        cnameRecord += ".";
+
+                    }
+                    // Otherwise adds next char to string
+                    else{
+                        cnameRecord += (char) response[curByte];
+                    }
+
+                    // Increases total length of CNAME record
+                    totalLength++;
+
+                    // Decreases size of current subsection
+                    curLength--;
+
+                    // Increments the currently selected byte
+                    curByte++;
+
+                }
+                System.out.println("CNAME\t" + cnameRecord + "\tnonauth");
             }
         }
 
