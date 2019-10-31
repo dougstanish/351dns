@@ -235,8 +235,9 @@ public class dns351 {
         // Place the message into the buffer.
         buf.putShort(messageID);
 
-        // QR, OPCODE, AA, TC, RD, RA, and RCODE, are conveniently all 0
-        buf.putShort((short) 0);
+        // Sets QR, OPCODE, AA, TC, RD, RA, and RCODE
+        buf.put((byte)0x01);
+        buf.put((byte)0x20);
 
         // QDCOUNT, we're making one request.
         buf.putShort((short) 1);
