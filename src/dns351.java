@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 public class dns351 {
@@ -290,7 +291,7 @@ public class dns351 {
 
         int curByte = 12;
         for(int i = 0; i < qdcount; i++) {
-            ArrayList<String> labels = new ArrayList<String>();
+            ArrayList<Integer> currentLabels = new ArrayList<>();
             while(true) {
                 if((response[curByte] & 0b11000000) != 0) {
                     // Labels have a length value, the first two bits have to be 0.
@@ -306,8 +307,14 @@ public class dns351 {
                 for(int j = 0; j < labelLen; j++, curByte++) {
                     working.append((char) response[curByte]);
                 }
-                labels.add(working.toString());
-                foundLabels.put(pntr, working.toString());
+                currentLabels.add(pntr);
+                for(Integer n : currentLabels) {
+                    if(foundLabels.containsKey(n)) {
+                        foundLabels.put(n, foundLabels.get(n) + "." + working.toString());
+                    } else {
+                        foundLabels.put(n, working.toString());
+                    }
+                }
             }
 
             // Increment curByte every time we use it, meaning it always points to the byte we haven't used.
@@ -376,7 +383,7 @@ public class dns351 {
                     if(curLength == 0){
 
                         // Sets length of next subsection
-                        curLength = (int) response[curByte];
+                        curLength = (int) response[curByte] & 0xff;
 
                         // If this subsection was the last
                         if(curLength == 0){
@@ -384,6 +391,15 @@ public class dns351 {
                             curByte++;
 
                             // Breaks out of loop
+                            break;
+                        } else if((curLength & 0b11000000) == 0b11000000) {
+                            // It's a pointer.
+                            curLength = (int) (response[curByte++] << 8) | response[curByte];
+                            cnameRecord += ".";
+                            cnameRecord += foundLabels.get(curLength & 0b0011111111111111);
+
+                            // Pointers are always the END of a label.
+                            curByte++;
                             break;
                         }
 
@@ -434,6 +450,15 @@ public class dns351 {
                             curByte++;
 
                             // Breaks out of loop
+                            break;
+                        } else if((curLength & 0b11000000) == 0b11000000) {
+                            // It's a pointer.
+                            curLength = (int) (response[curByte++] << 8) | response[curByte];
+                            nsRecord += ".";
+                            nsRecord += foundLabels.get(curLength & 0b0011111111111111);
+
+                            // Pointers are always the END of a label.
+                            curByte++;
                             break;
                         }
 
@@ -525,6 +550,15 @@ public class dns351 {
 
                             // Breaks out of loop
                             break;
+                        } else if((curLength & 0b11000000) == 0b11000000) {
+                            // It's a pointer.
+                            curLength = (int) (response[curByte++] << 8) | response[curByte];
+                            cnameRecord += ".";
+                            cnameRecord += foundLabels.get(curLength & 0b0011111111111111);
+
+                            // Pointers are always the END of a label.
+                            curByte++;
+                            break;
                         }
 
                         // Adds period to divide subsections
@@ -574,6 +608,15 @@ public class dns351 {
                             curByte++;
 
                             // Breaks out of loop
+                            break;
+                        } else if((curLength & 0b11000000) == 0b11000000) {
+                            // It's a pointer.
+                            curLength = (int) (response[curByte++] << 8) | response[curByte];
+                            nsRecord += ".";
+                            nsRecord += foundLabels.get(curLength & 0b0011111111111111);
+
+                            // Pointers are always the END of a label.
+                            curByte++;
                             break;
                         }
 
