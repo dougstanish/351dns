@@ -9,8 +9,14 @@ import java.util.Random;
 public class dns351 {
 
 
+    /**
+     * Main class that will take a DNS server and a website address, and return the IP address to access it
+     *
+     * @param args - An array of the given arguments
+     */
     public static void main(String[] args) {
 
+        // Makes sure correct number of args are present
         if(args.length < 2 || args.length > 3){
             System.err.println("Invalid number of arguments");
             System.err.println("Usage:\n./351dns @<server:port> <name>\n" +
@@ -22,6 +28,7 @@ public class dns351 {
 
         String address = args[0];
 
+        // Ensures the DNS ip is preceded with an '@' symbol
         if(address.charAt(0) != '@'){
             System.err.println("Invalid formatting on address");
             System.err.println("Usage:\n./351dns @<server:port> <name>\n" +
@@ -31,45 +38,75 @@ public class dns351 {
             System.exit(1);
         }
 
+        // Splits the address into the ip and the port
         String[] splitAddress = address.substring(1).split(":");
 
+        // Sets default port
         int port = 53;
 
+        // If a port is designated, sets port
         if(splitAddress.length == 2){
             port = Integer.parseInt(splitAddress[1]);
         }
 
+        // Byte array to hold the server ip
         byte[] serverIP = new byte[4];
+
+        // Splits the IP by the '.'
         String[] ipBytes = splitAddress[0].split("\\.");
+
+        // Ensures that IP is in proper format
         if(ipBytes.length != 4) {
             System.out.println("Server IP address must be in a.b.c.d format: " + splitAddress[0]);
             System.exit(1);
         }
 
+        // Converts the IP to bytes
         for(int i = 0; i < 4; i++) {
             serverIP[i] = (byte) Integer.parseInt(ipBytes[i]);
         }
         
         String name = args[1];
 
+        // Hard-coded request type
         String requestType = "a";
 
-        byte[] request = createRequest(address, port, name, requestType);
+        // Creates the byte payload to be sent to the DNS server
+        byte[] request = createRequest(name, requestType);
+
+        // Array to hold DNS response
         byte[] responseData = new byte[512];
 
         try {
+
+            // Creates a socket to send and receive the DNS query and response
             DatagramSocket socket = new DatagramSocket();
+
             // Specifically parse the IP into a byte array by hand because we cant use getByName
             DatagramPacket dnsReq = new DatagramPacket(request, request.length, InetAddress.getByAddress(serverIP), port);
             DatagramPacket dnsResponse = new DatagramPacket(responseData, 512);
+
+            // Sends the DNS request
             socket.send(dnsReq);
+
+            // Creates a time to time out the request, used if it keeps recieving junk data
             Instant timeout = Instant.now().plusSeconds(5);
+
+            // Sets the time to time out if the socket does not receive any data
+            socket.setSoTimeout(5000);
+
             while(true) {
+
+                // Wait to receive data from the set port
                 socket.receive(dnsResponse);
+
+                // If the data matches the expected data, break loop
                 if (responseData[0] != request[0] && responseData[1] != request[1]) {
                 } else {
                     break;
                 }
+
+                // If the system has not received the response in 5 seconds
                 if(Instant.now().isAfter(timeout)) {
                     System.out.println("NORESPONSE");
                     System.exit(1);
@@ -81,6 +118,9 @@ public class dns351 {
         } catch (UnknownHostException e) {
             System.out.println("ERROR\t" + splitAddress[0] + " is not a valid IP address.");
             System.exit(1);
+        } catch (SocketTimeoutException e) {
+            System.out.println("NORESPONSE");
+            System.exit(1);
         } catch (IOException e) {
             System.out.println("ERROR\tCould not send packet to server.");
             System.exit(1);
@@ -90,6 +130,7 @@ public class dns351 {
         }
         System.out.println();
 
+        // Parses the response and prints the data
         parseResponse(responseData);
 
     }
@@ -98,10 +139,19 @@ public class dns351 {
 
     }
 
-    private static byte[] createRequest(String address, int port, String name, String requestType) {
-        
+    /**
+     * Method that creates a DNS request
+     *
+     * @param name - The name that we are querying the DNS server with
+     * @param requestType - The type of request we are trying to send
+     * @return - A byte array containing the query
+     */
+    private static byte[] createRequest(String name, String requestType) {
+
+        // Creates the header for the request
         byte[] header = createHeader();
 
+        // Creates the query for the request
         byte[] query = createQuery(name, requestType);
 
         // Final Packet.
@@ -151,7 +201,7 @@ public class dns351 {
         byte[] qtype = new byte[2];
 
         // If it is an A record lookup, sets appropriate values
-        if(requestType.equals("a")){
+        if(requestType.equals("a")){  // TODO Cname?
             qtype[0] = 0x00;
             qtype[1] = 0x01;
         }
@@ -171,6 +221,7 @@ public class dns351 {
 
     private static byte[] createHeader() {
 
+        // Creates random number generator
         Random r = new Random();
 
         byte[] output = new byte[12];
