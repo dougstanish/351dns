@@ -202,8 +202,10 @@ public class dns351 {
 
         // If it is an A record lookup, sets appropriate values
         if(requestType.equals("a")){  // TODO Cname?
-            qtype[0] = 0x00;
             qtype[1] = 0x01;
+        }
+        else if (requestType.equals("ns")){
+            qtype[1] = 0x02;
         }
 
         // Sets value for internet lookup
@@ -362,6 +364,59 @@ public class dns351 {
 
                 // Gets length of subsection of CNAME record
                 int curLength = (int) response[curByte];
+
+                curByte++;
+
+                int totalLength = 0;
+
+                // While there are still chars to be read
+                while(totalLength != rdlength){
+
+                    // If the current subsection has no more chars
+                    if(curLength == 0){
+
+                        // Sets length of next subsection
+                        curLength = (int) response[curByte];
+
+                        // If this subsection was the last
+                        if(curLength == 0){
+
+                            curByte++;
+
+                            // Breaks out of loop
+                            break;
+                        }
+
+                        // Adds period to divide subsections
+                        cnameRecord += ".";
+
+                    }
+                    // Otherwise adds next char to string
+                    else{
+                        byte temp = response[curByte];
+                        cnameRecord += (char) response[curByte];
+
+                        // Decreases size of current subsection
+                        curLength--;
+                    }
+
+                    // Increases total length of CNAME record
+                    totalLength++;
+
+
+                    // Increments the currently selected byte
+                    curByte++;
+
+                }
+                System.out.println("CNAME\t" + cnameRecord + "\tnonauth");
+            }
+            else if(type == 2){
+
+                // Creates string to hold combined record
+                String nsRecord = "";
+
+                // Gets length of subsection of CNAME record
+                int curLength = (int) response[curByte];
                 int totalLength = 0;
 
                 // While there are still chars to be read
@@ -383,12 +438,12 @@ public class dns351 {
                         }
 
                         // Adds period to divide subsections
-                        cnameRecord += ".";
+                        nsRecord += ".";
 
                     }
                     // Otherwise adds next char to string
                     else{
-                        cnameRecord += (char) response[curByte];
+                        nsRecord += (char) response[curByte];
                     }
 
                     // Increases total length of CNAME record
@@ -401,7 +456,7 @@ public class dns351 {
                     curByte++;
 
                 }
-                System.out.println("CNAME\t" + cnameRecord + "\tnonauth");
+                System.out.println("NS\t" + nsRecord + "\tnonauth");
             }
         }
 
@@ -440,6 +495,108 @@ public class dns351 {
                 }
                 System.out.println("IP\t" + (response[curByte++] & 0xff) + "." + (response[curByte++] & 0xff) + "." +
                         (response[curByte++] & 0xff) + "." + (response[curByte++] & 0xff) + "\tauth");
+            }
+            // If CNAME
+            else if(type == 5){
+
+                // Creates string to hold combined record
+                String cnameRecord = "";
+
+                // Gets length of subsection of CNAME record
+                int curLength = (int) response[curByte];
+
+                curByte++;
+
+                int totalLength = 0;
+
+                // While there are still chars to be read
+                while(totalLength != rdlength){
+
+                    // If the current subsection has no more chars
+                    if(curLength == 0){
+
+                        // Sets length of next subsection
+                        curLength = (int) response[curByte];
+
+                        // If this subsection was the last
+                        if(curLength == 0){
+
+                            curByte++;
+
+                            // Breaks out of loop
+                            break;
+                        }
+
+                        // Adds period to divide subsections
+                        cnameRecord += ".";
+
+                    }
+                    // Otherwise adds next char to string
+                    else{
+                        byte temp = response[curByte];
+                        cnameRecord += (char) response[curByte];
+
+                        // Decreases size of current subsection
+                        curLength--;
+                    }
+
+                    // Increases total length of CNAME record
+                    totalLength++;
+
+
+                    // Increments the currently selected byte
+                    curByte++;
+
+                }
+                System.out.println("CNAME\t" + cnameRecord + "\tnauth");
+            }
+            else if(type == 2){
+
+                // Creates string to hold combined record
+                String nsRecord = "";
+
+                // Gets length of subsection of CNAME record
+                int curLength = (int) response[curByte];
+                int totalLength = 0;
+
+                // While there are still chars to be read
+                while(totalLength != rdlength){
+
+                    // If the current subsection has no more chars
+                    if(curLength == -1){
+
+                        // Sets length of next subsection
+                        curLength = (int) response[curByte];
+
+                        // If this subsection was the last
+                        if(curLength == 0){
+
+                            curByte++;
+
+                            // Breaks out of loop
+                            break;
+                        }
+
+                        // Adds period to divide subsections
+                        nsRecord += ".";
+
+                    }
+                    // Otherwise adds next char to string
+                    else{
+                        nsRecord += (char) response[curByte];
+                    }
+
+                    // Increases total length of CNAME record
+                    totalLength++;
+
+                    // Decreases size of current subsection
+                    curLength--;
+
+                    // Increments the currently selected byte
+                    curByte++;
+
+                }
+                System.out.println("NS\t" + nsRecord + "\tauth");
             }
         }
     }
