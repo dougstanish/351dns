@@ -20,19 +20,48 @@ public class dns351 {
         // Makes sure correct number of args are present
         if(args.length < 2 || args.length > 3){
             System.err.println("Invalid number of arguments");
-            System.err.println("Usage:\n./351dns @<server:port> <name>\n" +
+            System.err.println("Usage:\n./351dns [-ns|-mx] @<server:port> <name>\n" +
+                    "-ns or -mx (optional) If the name server or mail server should be queried\n" +
                     "port (Optional) The UDP port number of the DNS server. Default value: 53.\n" +
                     "server (Required) The IP address of the DNS server, in a.b.c.d format.\n" +
                     "name (Required) The name to query for");
             System.exit(1);
         }
 
-        String address = args[0];
+        int requiredArgsIndex = 0;
+
+        // Hard-coded request type
+        String requestType = "a";
+
+        // If there is an optional flag, offset required arg indices by 1
+        if(args.length == 3){
+            requiredArgsIndex++;
+
+            if(args[0].equals("-ns")){
+                requestType = "ns";
+            }
+            else if (args[0].equals("-mx")){
+                requestType = "mx";
+            }
+            else{
+                System.err.println("Invalid optional flag");
+                System.err.println("Usage:\n./351dns [-ns|-mx] @<server:port> <name>\n" +
+                        "-ns or -mx (optional) If the name server or mail server should be queried\n" +
+                        "port (Optional) The UDP port number of the DNS server. Default value: 53.\n" +
+                        "server (Required) The IP address of the DNS server, in a.b.c.d format.\n" +
+                        "name (Required) The name to query for");
+                System.exit(1);
+            }
+
+        }
+
+        String address = args[requiredArgsIndex];
 
         // Ensures the DNS ip is preceded with an '@' symbol
         if(address.charAt(0) != '@'){
             System.err.println("Invalid formatting on address");
-            System.err.println("Usage:\n./351dns @<server:port> <name>\n" +
+            System.err.println("Usage:\n./351dns [-ns|-mx] @<server:port> <name>\n" +
+                    "-ns or -mx (optional) If the name server or mail server should be queried\n" +
                     "port (Optional) The UDP port number of the DNS server. Default value: 53.\n" +
                     "server (Required) The IP address of the DNS server, in a.b.c.d format.\n" +
                     "name (Required) The name to query for");
@@ -67,10 +96,7 @@ public class dns351 {
             serverIP[i] = (byte) Integer.parseInt(ipBytes[i]);
         }
         
-        String name = args[1];
-
-        // Hard-coded request type
-        String requestType = "mx";
+        String name = args[requiredArgsIndex+1];
 
         // Creates the byte payload to be sent to the DNS server
         byte[] request = createRequest(name, requestType);
