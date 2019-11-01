@@ -1,3 +1,0 @@
-cd src
-javac dns351.java
-java dns351 $@
