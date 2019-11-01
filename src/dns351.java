@@ -202,7 +202,7 @@ public class dns351 {
         byte[] qtype = new byte[2];
 
         // If it is an A record lookup, sets appropriate values
-        if(requestType.equals("a")){  // TODO Cname?
+        if(requestType.equals("a")){
             qtype[1] = 0x01;
         }
         else if (requestType.equals("ns")){
@@ -433,6 +433,9 @@ public class dns351 {
 
                 // Gets length of subsection of CNAME record
                 int curLength = (int) response[curByte];
+
+                curByte++;
+
                 int totalLength = 0;
 
                 // While there are still chars to be read
@@ -469,13 +472,14 @@ public class dns351 {
                     // Otherwise adds next char to string
                     else{
                         nsRecord += (char) response[curByte];
+
+                        // Decreases size of current subsection
+                        curLength--;
+
                     }
 
                     // Increases total length of CNAME record
                     totalLength++;
-
-                    // Decreases size of current subsection
-                    curLength--;
 
                     // Increments the currently selected byte
                     curByte++;
@@ -567,7 +571,6 @@ public class dns351 {
                     }
                     // Otherwise adds next char to string
                     else{
-                        byte temp = response[curByte];
                         cnameRecord += (char) response[curByte];
 
                         // Decreases size of current subsection
@@ -582,7 +585,7 @@ public class dns351 {
                     curByte++;
 
                 }
-                System.out.println("CNAME\t" + cnameRecord + "\tnauth");
+                System.out.println("CNAME\t" + cnameRecord + "\tauth");
             }
             else if(type == 2){
 
@@ -591,13 +594,16 @@ public class dns351 {
 
                 // Gets length of subsection of CNAME record
                 int curLength = (int) response[curByte];
+
+                curByte++;
+
                 int totalLength = 0;
 
                 // While there are still chars to be read
                 while(totalLength != rdlength){
 
                     // If the current subsection has no more chars
-                    if(curLength == -1){
+                    if(curLength == 0){
 
                         // Sets length of next subsection
                         curLength = (int) response[curByte];
@@ -627,19 +633,21 @@ public class dns351 {
                     // Otherwise adds next char to string
                     else{
                         nsRecord += (char) response[curByte];
+
+                        // Decreases size of current subsection
+                        curLength--;
                     }
 
                     // Increases total length of CNAME record
                     totalLength++;
 
-                    // Decreases size of current subsection
-                    curLength--;
 
                     // Increments the currently selected byte
                     curByte++;
 
                 }
                 System.out.println("NS\t" + nsRecord + "\tauth");
+
             }
         }
     }
