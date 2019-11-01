@@ -346,9 +346,6 @@ public class dns351 {
         System.out.println("NSCOUNT: " + nscount);
         System.out.println("ARCOUNT: " + arcount);
 */
-        System.out.println();
-        dumpPacket(response, response.length);
-
         // WHO DESIGNED THE DNS PACKET FORMAT AND WHY DID THEY ADD POINTERS?!?
         HashMap<Integer, String> foundLabels = new HashMap<>();
 
