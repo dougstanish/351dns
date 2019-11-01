@@ -167,7 +167,12 @@ public class dns351 {
                     toPrint += String.format("%02x", bytes[curByte]);
 
                     // Save char value of string
-                    charValues += (char) bytes[curByte];
+                    char temp = (char) bytes[curByte];
+		    if (temp >= 32 && temp < 127) {
+			charValues += temp;
+		    } else {
+			charValues += '.';
+		    }
 
                     curByte++;
 
