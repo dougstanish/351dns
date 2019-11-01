@@ -75,6 +75,9 @@ public class dns351 {
         // Creates the byte payload to be sent to the DNS server
         byte[] request = createRequest(name, requestType);
 
+        // Prints request to stdout
+        dumpPacket(request, request.length);
+
         // Array to hold DNS response
         byte[] responseData = new byte[512];
 
@@ -126,18 +129,67 @@ public class dns351 {
             System.out.println("ERROR\tCould not send packet to server.");
             System.exit(1);
         }
-        for(byte b : responseData) {
-            System.out.print((b & 0xff) + ", ");
-        }
-        System.out.println();
 
         // Parses the response and prints the data
         parseResponse(responseData);
 
     }
 
-    private static void dumpPacket(byte[] bytes) {
+    /**
+     * Program that dumps a byte array and display's values
+     *
+     * @param bytes The array of bytes to display
+     * @param size The size of the byte array
+     */
+    private static void dumpPacket(byte[] bytes, int size) {
 
+        // Keeps track of the current byte
+        int curByte = 0;
+
+        // For each line of 16 bytes
+        for(int i = 0; (i/10) < (int) Math.ceil(size/16.0); i+= 10){
+
+            // Gets the line number
+            String lineNumber = String.format("%04d", i);
+
+            // Adds line number to string
+            String toPrint = "[" + lineNumber + "]\t";
+
+            String charValues = "";
+
+            // For each value on line
+            for(int k = 0; k < 16; k++){
+
+                // If it is still in valid array space
+                if(curByte < size) {
+
+                    // Add byte to string
+                    toPrint += String.format("%02x", bytes[curByte]);
+
+                    // Save char value of string
+                    charValues += (char) bytes[curByte];
+
+                    curByte++;
+
+                    // Adds tabs when appropriate
+                    if(((k+1) % 8 == 0) && k != 0){
+                        toPrint += "\t";
+                    }
+                    // Adds spaces when appropriate
+                    else{
+                        toPrint += " ";
+                    }
+                }
+                // If out of bounds, simply add spaces
+                else{
+                    toPrint += "   ";
+                }
+
+            }
+
+            // Print the line of the byte array
+            System.out.println(toPrint + "\t" + charValues);
+        }
     }
 
     /**
