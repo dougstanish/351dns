@@ -325,11 +325,10 @@ public class dns351 {
         // This for loop handles all the Answer section parts.
         for(int i = 0; i < ancount; i++) {
             StringBuilder recordName = new StringBuilder();
-            boolean nameDone = false;
-            while(!nameDone) {
+            while(true) {
                 if((response[curByte] & 0b11000000) == 0b11000000) {
                     recordName.append(foundLabels.get(((response[curByte++] & 0b00111111) << 8) | response[curByte++]));
-                    nameDone = true;
+                    break;
                 } else if ((response[curByte] & 0b11000000) == 0) {
                     StringBuilder working = new StringBuilder();
                     int labelLen = response[curByte];
@@ -344,6 +343,7 @@ public class dns351 {
                     foundLabels.put(pntr, working.toString());
                 } else {
                     System.out.println("ERROR\tInvalid label.");
+                    System.exit(1);
                 }
             }
             short type = (short) ((response[curByte++] << 8) | response[curByte++]);
@@ -370,9 +370,7 @@ public class dns351 {
                 String cnameRecord = "";
 
                 // Gets length of subsection of CNAME record
-                int curLength = (int) response[curByte];
-
-                curByte++;
+                int curLength = (int) response[curByte++] & 0xFF;
 
                 int totalLength = 0;
 
@@ -406,6 +404,15 @@ public class dns351 {
                         // Adds period to divide subsections
                         cnameRecord += ".";
 
+                    } else if((curLength & 0b11000000) == 0b11000000) {
+                        // It's a pointer.
+                        curByte++;
+                        curLength = (int) ((response[curByte++] << 8) | response[curByte]);
+                        cnameRecord += foundLabels.get(curLength & 0b0011111111111111);
+
+                        // Pointers are always the END of a label.
+                        curByte--;
+                        break;
                     }
                     // Otherwise adds next char to string
                     else{
@@ -468,6 +475,15 @@ public class dns351 {
                         // Adds period to divide subsections
                         nsRecord += ".";
 
+                    } else if((curLength & 0b11000000) == 0b11000000) {
+                        // It's a pointer.
+                        curByte++;
+                        curLength = (int) ((response[curByte++] << 8) | response[curByte]);
+                        nsRecord += foundLabels.get(curLength & 0b0011111111111111);
+
+                        // Pointers are always the END of a label.
+                        curByte--;
+                        break;
                     }
                     // Otherwise adds next char to string
                     else{
@@ -491,11 +507,10 @@ public class dns351 {
 
         for(int i = 0; i < nscount; i++) {
             StringBuilder recordName = new StringBuilder();
-            boolean nameDone = false;
-            while(!nameDone) {
+            while(true) {
                 if((response[curByte] & 0b11000000) == 0b11000000) {
                     recordName.append(foundLabels.get(((response[curByte++] & 0b00111111) << 8) | response[curByte++]));
-                    nameDone = true;
+                    break;
                 } else if ((response[curByte] & 0b11000000) == 0) {
                     StringBuilder working = new StringBuilder();
                     int labelLen = response[curByte];
@@ -510,6 +525,7 @@ public class dns351 {
                     foundLabels.put(pntr, working.toString());
                 } else {
                     System.out.println("ERROR\tInvalid label.");
+                    System.exit(1);
                 }
             }
             short type = (short) ((response[curByte++] << 8) | response[curByte++]);
@@ -568,6 +584,15 @@ public class dns351 {
                         // Adds period to divide subsections
                         cnameRecord += ".";
 
+                    } else if((curLength & 0b11000000) == 0b11000000) {
+                        // It's a pointer.
+                        curByte++;
+                        curLength = (int) ((response[curByte++] << 8) | response[curByte]);
+                        cnameRecord += foundLabels.get(curLength & 0b0011111111111111);
+
+                        // Pointers are always the END of a label.
+                        curByte--;
+                        break;
                     }
                     // Otherwise adds next char to string
                     else{
@@ -629,6 +654,15 @@ public class dns351 {
                         // Adds period to divide subsections
                         nsRecord += ".";
 
+                    } else if((curLength & 0b11000000) == 0b11000000) {
+                        // It's a pointer.
+                        curByte++;
+                        curLength = (int) ((response[curByte++] << 8) | response[curByte]);
+                        nsRecord += foundLabels.get(curLength & 0b0011111111111111);
+
+                        // Pointers are always the END of a label.
+                        curByte--;
+                        break;
                     }
                     // Otherwise adds next char to string
                     else{
