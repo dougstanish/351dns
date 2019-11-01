@@ -70,7 +70,7 @@ public class dns351 {
         String name = args[1];
 
         // Hard-coded request type
-        String requestType = "a";
+        String requestType = "mx";
 
         // Creates the byte payload to be sent to the DNS server
         byte[] request = createRequest(name, requestType);
@@ -265,6 +265,9 @@ public class dns351 {
         else if (requestType.equals("ns")){
             qtype[1] = 0x02;
         }
+        else if (requestType.equals(("mx"))){
+            qtype[1] = 0x0f;
+        }
 
         // Sets value for internet lookup
         byte[] qclass = {0x00, 0x01};
@@ -343,6 +346,9 @@ public class dns351 {
         System.out.println("NSCOUNT: " + nscount);
         System.out.println("ARCOUNT: " + arcount);
 */
+        System.out.println();
+        dumpPacket(response, response.length);
+
         // WHO DESIGNED THE DNS PACKET FORMAT AND WHY DID THEY ADD POINTERS?!?
         HashMap<Integer, String> foundLabels = new HashMap<>();
 
@@ -473,7 +479,6 @@ public class dns351 {
                     }
                     // Otherwise adds next char to string
                     else{
-                        byte temp = response[curByte];
                         cnameRecord += (char) response[curByte];
 
                         // Decreases size of current subsection
@@ -506,7 +511,7 @@ public class dns351 {
                 while(totalLength != rdlength){
 
                     // If the current subsection has no more chars
-                    if(curLength == -1){
+                    if(curLength == 0){
 
                         // Sets length of next subsection
                         curLength = (int) response[curByte];
@@ -559,6 +564,83 @@ public class dns351 {
 
                 }
                 System.out.println("NS\t" + nsRecord + "\tnonauth");
+            }
+            else if(type == 15){
+
+                // Creates string to hold combined record
+                String mxRecord = "";
+
+                curByte ++;
+
+                // Gets the preference number of the given mail server
+                int preference = (int) response[curByte];
+
+                curByte++;
+
+                // Gets length of subsection of CNAME record
+                int curLength = (int) response[curByte];
+
+                curByte++;
+
+                int totalLength = 0;
+
+                // While there are still chars to be read
+                while(totalLength != rdlength){
+
+                    // If the current subsection has no more chars
+                    if(curLength == 0){
+
+                        // Sets length of next subsection
+                        curLength = (int) response[curByte];
+
+                        // If this subsection was the last
+                        if(curLength == 0){
+
+                            curByte++;
+
+                            // Breaks out of loop
+                            break;
+                        } else if((curLength & 0b11000000) == 0b11000000) {
+                            // It's a pointer.
+                            curLength = (int) (response[curByte++] << 8) | response[curByte];
+                            mxRecord += ".";
+                            mxRecord += foundLabels.get(curLength & 0b0011111111111111);
+
+                            // Pointers are always the END of a label.
+                            curByte++;
+                            break;
+                        }
+
+                        // Adds period to divide subsections
+                        mxRecord += ".";
+
+                    } else if((curLength & 0b11000000) == 0b11000000) {
+                        // It's a pointer.
+                        curByte++;
+                        curLength = (int) ((response[curByte++] << 8) | response[curByte]);
+                        mxRecord += foundLabels.get(curLength & 0b0011111111111111);
+
+                        // Pointers are always the END of a label.
+                        curByte--;
+                        break;
+                    }
+                    // Otherwise adds next char to string
+                    else{
+                        mxRecord += (char) response[curByte];
+
+                        // Decreases size of current subsection
+                        curLength--;
+
+                    }
+
+                    // Increases total length of CNAME record
+                    totalLength++;
+
+                    // Increments the currently selected byte
+                    curByte++;
+
+                }
+                System.out.println("MX\t" + mxRecord + "\t" + preference + "\tnonauth");
             }
         }
 
@@ -739,6 +821,83 @@ public class dns351 {
                 }
                 System.out.println("NS\t" + nsRecord + "\tauth");
 
+            }
+            else if(type == 15){
+
+                // Creates string to hold combined record
+                String mxRecord = "";
+
+                curByte ++;
+
+                // Gets the preference number of the given mail server
+                int preference = (int) response[curByte];
+
+                curByte++;
+
+                // Gets length of subsection of CNAME record
+                int curLength = (int) response[curByte];
+
+                curByte++;
+
+                int totalLength = 0;
+
+                // While there are still chars to be read
+                while(totalLength != rdlength){
+
+                    // If the current subsection has no more chars
+                    if(curLength == 0){
+
+                        // Sets length of next subsection
+                        curLength = (int) response[curByte];
+
+                        // If this subsection was the last
+                        if(curLength == 0){
+
+                            curByte++;
+
+                            // Breaks out of loop
+                            break;
+                        } else if((curLength & 0b11000000) == 0b11000000) {
+                            // It's a pointer.
+                            curLength = (int) (response[curByte++] << 8) | response[curByte];
+                            mxRecord += ".";
+                            mxRecord += foundLabels.get(curLength & 0b0011111111111111);
+
+                            // Pointers are always the END of a label.
+                            curByte++;
+                            break;
+                        }
+
+                        // Adds period to divide subsections
+                        mxRecord += ".";
+
+                    } else if((curLength & 0b11000000) == 0b11000000) {
+                        // It's a pointer.
+                        curByte++;
+                        curLength = (int) ((response[curByte++] << 8) | response[curByte]);
+                        mxRecord += foundLabels.get(curLength & 0b0011111111111111);
+
+                        // Pointers are always the END of a label.
+                        curByte--;
+                        break;
+                    }
+                    // Otherwise adds next char to string
+                    else{
+                        mxRecord += (char) response[curByte];
+
+                        // Decreases size of current subsection
+                        curLength--;
+
+                    }
+
+                    // Increases total length of CNAME record
+                    totalLength++;
+
+                    // Increments the currently selected byte
+                    curByte++;
+
+                }
+                System.out.println("MX\t" + mxRecord + "\t" + preference + "\tauth");
             }
         }
     }
