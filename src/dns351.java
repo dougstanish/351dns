@@ -322,7 +322,7 @@ public class dns351 {
         int ancount = (response[6] << 8 | response[7]);
         int nscount = (response[8] << 8 | response[9]);
         int arcount = (response[10] << 8 | response[11]);
-
+/*
         System.out.println("QR: " + qr);
         System.out.println("OPCODE: "+ opcode);
         System.out.println("AA: " + aa);
@@ -337,7 +337,7 @@ public class dns351 {
         System.out.println("ANCOUNT: " + ancount);
         System.out.println("NSCOUNT: " + nscount);
         System.out.println("ARCOUNT: " + arcount);
-
+*/
         // WHO DESIGNED THE DNS PACKET FORMAT AND WHY DID THEY ADD POINTERS?!?
         HashMap<Integer, String> foundLabels = new HashMap<>();
 
